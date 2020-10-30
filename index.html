@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Lab 5 map 2</title>
+		<link rel="icon" href="favicon.png" >
+		<!-- Load c3.css -->
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.20/c3.css" rel="stylesheet">
+		<!-- Leaflet Css-->
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+        integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+        crossorigin=""/>
+		<!-- Ensure cross platform compatibility -->
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<!-- Style -->
+		<!-- Better Scale Css-->
+		<link rel="stylesheet" href="plugins/better-scale/L.Control.BetterScale.css" />
+		<!--North Arrow -->
+		<link rel="stylesheet" href="plugins/north-arrow/L.Control.Rose.css" />
+		<style>
+			body {
+				padding: 0;
+				margin: 0;
+			}
+			html, body, #mymap {
+				height: 100%;
+				width: 100vw;
+			}
+			.row{
+				width: 200px;
+				margin-left: -15px;
+				margin-right: -15px;
+				margin-bottom: -10px;
+			}
+			
+			.column-1{
+				margin: 3px;
+				padding: 1px;
+			}
+			.column-2{
+				z-index:0;
+				width: 100%;
+			}
+			.row:after {
+			  content: "";
+			  clear: both;
+			}
+			.description{
+				font-size: 90%;
+			}
+			.legend {
+				padding: 6px 8px;
+				line-height: 18px;
+				background: rgba(255,255,255,0.9);
+				box-shadow: 0 0 15px rgba(0,0,0,0.2);
+				border-radius: 5px;
+			}
+
+			/* Optional: adjust the values below to change the appearance of the legend color boxes */
+			.legend i {
+				width: 15px;
+				height: 15px;
+				float: left;
+				margin-right: 8px;
+				opacity: 0.7;
+			}
+			.titleDiv {
+				padding: 6px;
+				background: rgba(255,255,255,0.9);
+				box-shadow: 0 0 15px rgba(0,0,0,0.2);
+				border-radius: 2px;
+			}
+			
+		</style>
+    </head>
+
+    <body>
+		<!--Map-->
+		<div id="mymap"></div>
+		<div id="chart"></div>
+		<!--Noth Arrow -->
+		<div id="rose"></div>
+		<!-- Java Scripts-->
+		<!-- Load d3.js and c3.js -->
+		<script src="https://d3js.org/d3.v5.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.20/c3.min.js"></script>
+		<!-- Leaflet js-->
+		<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+        integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+        crossorigin=""></script>
+		<!-- Better Scale Js-->
+		<script src="plugins/better-scale/L.Control.BetterScale.js"></script>
+		<!--North Arrow -->
+		<script src="plugins/north-arrow/L.Control.Rose.js"></script>
+		<!--Crime Rate Data -->
+		<script type="text/javascript" src="data/ages.js"></script>
+		<!--Map Data -->
+		<script type="text/javascript">
+			function highlightFeature(e) {
+				
+				// Get access to the feature that was hovered through e.target
+				var layer = e.target;
+
+				makeChart(layer.feature.properties);
+				// Set a thick grey border on the feature as mouseover effect
+				// Adjust the values below to change the highlighting styles of features on mouseover
+				// Check out https://leafletjs.com/reference-1.3.4.html#path for more options for changing style
+				layer.setStyle({
+					weight: 10,
+					color: '#fff',
+					fillOpacity: 0.7
+				});
+
+				// Bring the highlighted feature to front so that the border doesn’t clash with nearby states
+				// But not for IE, Opera or Edge, since they have problems doing bringToFront on mouseover
+				if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+					layer.bringToFront();
+				}
+			}
+			
+			function makeChart(props) {
+			// props is just a variable, which will be replaced with the layer's properties 
+			// when using the function
+				c3.generate({   
+				
+					bindto: '#chart',  // id of the chart div, as defined earlier
+
+					size: {  // size (height and width) of the chart, by pixels
+						height: 250,
+						width: 300        
+					},
+
+					title:{
+						text: props.NAME10+" Age Cohort"   // Use the NAME attribute as chart title 
+										// This is displayed above the chart
+										// You may use other strings, HTML elements or combined
+					},
+
+					data: {
+						// Define the actual data
+						// I use the attribute values as data for making the charts
+						// The strings are labels of the charts (shown in legend)
+						x: 'x',
+						columns: [  
+							['x', ' < 19', '20 - 34', '35 - 49', '50 - 69', '70 >'],
+							['Age', Number(props.Under19), Number(props.age20to34), Number(props.age35to49), Number(props.age50to69), Number(props.age70Over)]
+						],
+						
+
+						type: 'bar',  // chart type
+					},
+					
+					
+					legend: {
+					  show: false
+					},
+					
+					axis : {
+						x : {
+							//label: { text :'Age Cohort', position: 'outer-center'},
+							type : 'category',
+							tick: {
+								//padding: {left:0, right:0}
+								//format: '%Y' // format string is also available for timeseries data
+							}
+						},
+						y: {
+							label: { text :'Population * 10000', position: 'outer-center'},
+							tick: {
+								count: 5,
+								format: function (d) {d = Math.round(d/10000); return d}
+							}
+						}
+					},
+					
+					
+					
+					color:{ // colors of donut segments, same order as the data 
+						pattern:['green']
+					}
+
+				});
+			}
+
+			var geojson; 
+			
+			function resetHighlight(e) {
+				geojson.resetStyle(e.target);
+			}	
+			
+			function onEachFeature(feature, layer) {
+				layer.on({
+					mouseover: highlightFeature, // Do what defined by the highlightFeature function on mouseover
+					mouseout: resetHighlight,    // Do what defined by the resetHighlight function on mouseout
+				});
+			}
+
+			function getColor(POP10) {
+				return POP10 > 9089330 ? '#006d2c':
+					   POP10 > 5610374  ? '#31a354':
+					   POP10 > 3151903  ? '#74c476':
+					   POP10 > 1471894  ? '#bae4b3':
+					   POP10 > 563626  ? '#edf8e9':
+									 '#fef0d9';
+			}
+			
+			function style(feature){
+				return {
+					fillColor: getColor(feature.properties.POP10),   // pop_den is the field name for the population density data
+					weight: 2,
+					dashArray: '5, 10',
+					opacity: 0.7,
+					color: 'gray',
+					fillOpacity: 0.9
+				};
+			}
+			var tooltip = document.getElementById("chart");
+			geojson = L.geoJson(pop_ages, {
+				style:style,
+				onEachFeature: onEachFeature
+			}).bindTooltip(tooltip);
+			/*.bindPopup(function (layer){
+				return layer.feature.properties.NAME10 
+					   + '<p style="color:red">' + layer.feature.properties.POP10.toString() + ' Population</p>';       
+			})
+			*/
+			var Jawg_Matrix = L.tileLayer('https://{s}.tile.jawg.io/jawg-matrix/{z}/{x}/{y}{r}.png?access-token={accessToken}', {
+				attribution: '<a href="http://jawg.io" title="Tiles Courtesy of Jawg Maps" target="_blank">&copy; <b>Jawg</b>Maps</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+				minZoom: 0,
+				maxZoom: 22,
+				subdomains: 'abcd',
+				accessToken: 'XtidJ8DmagbIe4pQL2VlUdo55zeODRpHFd2jaQjOEGOVDA5jgsXLyx3tAXirPjJd'
+			});
+			
+			var OpenStreetMap_Mapnik = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				maxZoom: 19,
+				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+			});
+			
+			//Tutorial Layer - Obtained from leaflet map
+			var tutorialLayer = L.tileLayer('http://tile.stamen.com/toner/{z}/{x}/{y}.png', {
+					attribution: 'Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.',
+					maxZoom: 18,
+					minZoom: 1
+				});
+			//Tutorial Layer - Obtained from assignment
+			var assigmentLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+				attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+				maxZoom: 18,
+				id: 'mapbox.satellite',
+				accessToken: 'pk.eyJ1Ijoia2VpMTEwIiwiYSI6ImNqcmczdWJzNzFpOXk0NHA0ZDdwaThyZmgifQ.SN2dLbaBpbdlJyE5OCmndQ'
+			});
+			//cartodb layer
+			var cartodb = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
+			   attribution: 'Map tiles by Carto, under CC BY 3.0. Data by OpenStreetMap, under ODbL.',
+			   maxZoom: 11,
+			   minZoom: 2
+			 });
+			 
+			//map
+			var map = L.map('mymap', {
+				center: [39.2880922,-100.7323497],
+				zoom: 4,
+				layers: [cartodb, geojson] //add to map
+			});
+			
+			var baseMaps = {
+				"Carto DB": cartodb,
+				"Jawg Matrix": Jawg_Matrix,
+				"OSM Mapnik": OpenStreetMap_Mapnik
+			};
+			var overlayMaps = {
+				"Population" : geojson,
+			};
+			
+			var legend = L.control({position: 'bottomright'});
+			legend.onAdd = function (map) {
+
+				var div = L.DomUtil.create('div', 'legend'),
+					grades = [0, 563626, 1471894, 3151903, 5610374, 9089330]; // The break values to define the intervals of population, note we begin from 0 here
+
+				div.innerHTML = '<h5><b>Population</b></h5>'; // The legend title (HTML-based), in this case it's Population Density 2011
+
+				// Loop through our the classes and generate a label with a color box for each interval.
+				// If you are creating a choropleth map, you DO NOT need to change lines below.
+				for (var i = 0; i < grades.length; i++) {
+					div.innerHTML +=
+					'<i style="background:' + getColor(grades[i] + 1) + '"></i>' +
+					grades[i] + (grades[i + 1] ? ' &ndash; ' + grades[i + 1] + '</br>' : '+');
+				}
+
+				return div;
+			};
+			legend.addTo(map);
+			
+			var titleDiv = L.control({position: 'topright'});
+			titleDiv.onAdd = function (map){
+				var titleText = L.DomUtil.create('div', 'titleDiv');
+				titleText.innerHTML = '<h4>United States Population</h4>';
+				return titleText;
+			};
+			titleDiv.addTo(map);
+			// Removing the legend when the layer is removed
+			map.on('overlayremove', function(eventLayer){
+			  if (eventLayer.name == 'Annual Crimes'){ // We use the key/display name to refer to the layer
+				map.removeControl(legend); // legend is the variable name of the layer legend
+			  }
+			});
+
+			// Adding the legend when the layer is added
+			map.on('overlayadd', function(eventLayer){
+			  if (eventLayer.name == 'Annual Crimes'){
+				legend.addTo(map);
+			  }
+			});
+			//Layer Control -- Legend
+			L.control.layers(baseMaps, overlayMaps).addTo(map);
+			//Better Scale Plugin
+			L.control.betterscale().addTo(map);
+			//rose north arrow
+			var rose = L.control.rose('rose', {position:'bottomleft', icon:'inner', iSize:'xsmall', opacity:0.8});
+			rose.addTo(map);
+			//Title
+			
+		</script>
+    </body>
+</html>
